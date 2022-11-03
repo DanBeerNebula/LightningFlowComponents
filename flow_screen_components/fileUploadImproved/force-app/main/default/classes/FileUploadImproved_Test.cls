@@ -1,139 +1,155 @@
-@isTest
+@IsTest
 public class FileUploadImproved_Test {
-    
+
     @TestSetup
-    static void makeData(){
+    static void makeData() {
         Contact con = new Contact(
-            LastName = 'Test'
+                LastName = 'Test',
+                FirstName = 'Bob'
         );
         insert con;
-        
+
         ContentVersion cv = new ContentVersion(
-        	Title = 'Test',
-            PathOnClient = 'Test',
-            VersionData = EncodingUtil.base64Decode('Test'),
-            IsMajorVersion = FALSE
+                Title = 'Test',
+                PathOnClient = 'Test',
+                VersionData = EncodingUtil.base64Decode('Test'),
+                IsMajorVersion = false
         );
         insert cv;
     }
 
-	@isTest
-    public static void encrypted_test(){
+    @IsTest
+    public static void encryptedTest() {
         String key = FileUploadImprovedHelper.getKey();
 
         Contact con = getCon();
         ContentVersion cv = getCV();
-        cv.Guest_Record_fileupload__c = FileUploadImprovedHelper.encrypt(con.Id,key);
+        cv.Guest_Record_fileupload__c = FileUploadImprovedHelper.encrypt(con.Id, key);
         update cv;
-        
-        system.test.startTest();
-            FileUploadImprovedHelper.createContentDocLink(new List<String>{cv.Id},key,true);
-        system.test.stopTest();
 
+        Test.startTest();
+        FileUploadImprovedHelper.createContentDocLink(new List<String>{
+                cv.Id
+        }, key, true);
+        Test.stopTest();
 
         List<ContentDocumentLink> cdl = [SELECT Id FROM ContentDocumentLink WHERE LinkedEntityId = :con.Id];
-        system.assertEquals(1, cdl.size());
+        System.assertEquals(1, cdl.size());
     }
 
-    @isTest
-    public static void get_existing_files(){
+    @IsTest
+    public static void getExistingFiles() {
         String key = FileUploadImprovedHelper.getKey();
 
         Contact con = getCon();
         ContentVersion cv = getCV();
-        cv.Guest_Record_fileupload__c = FileUploadImprovedHelper.encrypt(con.Id,key);
+        cv.Guest_Record_fileupload__c = FileUploadImprovedHelper.encrypt(con.Id, key);
         update cv;
-        
-        system.test.startTest();
-            FileUploadImprovedHelper.createContentDocLink(new List<String>{cv.Id},key,false);
-            List<FileUploadImprovedHelper.objFiles> objFiles = FileUploadImprovedHelper.getExistingFiles(con.Id); 
-        system.test.stopTest();
 
-        system.assertEquals(1, objFiles.size());
+        Test.startTest();
+        FileUploadImprovedHelper.createContentDocLink(new List<String>{
+                cv.Id
+        }, key, false);
+        List<FileUploadImprovedHelper.objFiles> objFiles = FileUploadImprovedHelper.getExistingFiles(con.Id);
+        Test.stopTest();
+
+        System.assertEquals(1, objFiles.size());
     }
 
-    @isTest
-    public static void change_file_name(){
+    @IsTest
+    public static void changeFileName() {
         ContentVersion cv = getCV();
         String fileName = 'https://www.linkedin.com/in/rygramer/';
 
-        system.test.startTest();
-        FileUploadImprovedHelper.updateFileName(new List<String>{cv.Id}, fileName);
-        system.test.stopTest();
+        Test.startTest();
+        FileUploadImprovedHelper.updateFileName(new List<String>{
+                cv.Id
+        }, fileName);
+        Test.stopTest();
 
         cv = getCV();
-        system.assertEquals(fileName, cv.ContentDocument.Title);
+        System.assertEquals(fileName, cv.ContentDocument.Title);
     }
 
-    @isTest
-    public static void delete_test(){
+    @IsTest
+    public static void deleteTest() {
         ContentVersion cv = getCV();
 
-        system.test.startTest();
-            FileUploadImprovedHelper.deleteContentDoc(cv.Id);
-        system.test.stopTest();
-        
+        Test.startTest();
+        FileUploadImprovedHelper.deleteContentDoc(cv.Id);
+        Test.stopTest();
+
     }
 
-    @isTest
-    public static void invocable_test_create_link(){
+    @IsTest
+    public static void invocableTestCreateLink() {
         ContentVersion cv = getCV();
         Contact con = getCon();
 
         FileUploadImprovedHelper.Input input = new FileUploadImprovedHelper.Input();
-        input.versIds = new List<Id>{cv.Id};
+        input.versIds = new List<Id>{
+                cv.Id
+        };
         input.recordId = con.Id;
-        input.visibleToAllUsers = TRUE;
+        input.visibleToAllUsers = true;
 
-        system.test.startTest();
-            FileUploadImprovedHelper.createContentDocumentLinkDownstream(new List<FileUploadImprovedHelper.Input>{input});
-        system.test.stopTest();
+        Test.startTest();
+        FileUploadImprovedHelper.createContentDocumentLinkDownstream(new List<FileUploadImprovedHelper.Input>{
+                input
+        });
+        Test.stopTest();
 
         ContentDocumentLink link = [SELECT Visibility FROM ContentDocumentLink WHERE LinkedEntityId = :con.Id];
 
-        system.assert(link.Visibility == 'AllUsers');
+        System.assert(link.Visibility == 'AllUsers');
     }
 
-    @isTest
-    public static void invocable_test_link_already_exists(){
+    @IsTest
+    public static void invocableTestLinkAlreadyExists() {
         ContentVersion cv = getCV();
         Contact con = getCon();
 
         ContentDocumentLink link = new ContentDocumentLink(
-            ContentDocumentId = cv.ContentDocumentId,
-            LinkedEntityId = con.Id,
-            Visibility = 'AllUsers'
+                ContentDocumentId = cv.ContentDocumentId,
+                LinkedEntityId = con.Id,
+                Visibility = 'AllUsers'
         );
         insert link;
 
         FileUploadImprovedHelper.Input input = new FileUploadImprovedHelper.Input();
-        input.versIds = new List<Id>{cv.Id};
+        input.versIds = new List<Id>{
+                cv.Id
+        };
         input.recordId = con.Id;
-        input.visibleToAllUsers = TRUE;
+        input.visibleToAllUsers = true;
 
-        system.test.startTest();
-            FileUploadImprovedHelper.createContentDocumentLinkDownstream(new List<FileUploadImprovedHelper.Input>{input});
-        system.test.stopTest();
+        Test.startTest();
+        FileUploadImprovedHelper.createContentDocumentLinkDownstream(new List<FileUploadImprovedHelper.Input>{
+                input
+        });
+        Test.stopTest();
 
         link = [SELECT Visibility FROM ContentDocumentLink WHERE LinkedEntityId = :con.Id];
 
-        system.assert(link.Visibility == 'AllUsers');
+        System.assert(link.Visibility == 'AllUsers');
     }
 
-    @isTest
-    public static void invocable_test_with_empty_list(){
+    @IsTest
+    public static void invocableTestWithEmptyList() {
 
         FileUploadImprovedHelper.Input input = new FileUploadImprovedHelper.Input();
         input.versIds = new List<Id>();
 
-        system.test.startTest();
-            FileUploadImprovedHelper.createContentDocumentLinkDownstream(new List<FileUploadImprovedHelper.Input>{input});
-        system.test.stopTest();
+        Test.startTest();
+        FileUploadImprovedHelper.createContentDocumentLinkDownstream(new List<FileUploadImprovedHelper.Input>{
+                input
+        });
+        Test.stopTest();
 
     }
 
-    @isTest
-    public static void create_contentversion(){
+    @IsTest
+    public static void createContentVersion() {
         String encodedKey = FileUploadImprovedHelper.getKey();
         String encodedRecordId = FileUploadImprovedHelper.encrypt(getCon().Id, encodedKey);
 
@@ -141,19 +157,21 @@ public class FileUploadImproved_Test {
         Blob beforeBlob = Blob.valueOf(beforeString);
         String newVersionData = EncodingUtil.base64Encode(beforeblob);
 
-        List<String> fileNames = new List<String>{'FileUploadImproved.txt'};
+        List<String> fileNames = new List<String>{
+                'FileUploadImproved.txt'
+        };
         List<Id> versIds = new List<Id>();
-        system.test.startTest();   
-            List<FileUploadImprovedHelper.objFiles> objFiles = FileUploadImprovedHelper.createContentVers(fileNames, encodedRecordId);
+        Test.startTest();
+        List<FileUploadImprovedHelper.objFiles> objFiles = FileUploadImprovedHelper.createContentVers(fileNames, encodedRecordId);
 
-            for(FileUploadImprovedHelper.objFiles objFile : objFiles){
-                versIds.add(objFile.contentVersionId);
-                FileUploadImprovedHelper.appendDataToContentVersion(objFile.contentVersionId, newVersionData);
-            }
-        system.test.stopTest();
+        for (FileUploadImprovedHelper.objFiles objFile : objFiles) {
+            versIds.add(objFile.contentVersionId);
+            FileUploadImprovedHelper.appendDataToContentVersion(objFile.contentVersionId, newVersionData);
+        }
+        Test.stopTest();
 
-        for(ContentVersion vers : [SELECT VersionData, Guest_Record_fileupload__c FROM ContentVersion WHERE Id IN :versIds]){
-            system.assertEquals(encodedRecordId, vers.Guest_Record_fileupload__c);
+        for (ContentVersion vers : [SELECT VersionData, Guest_Record_fileupload__c FROM ContentVersion WHERE Id IN :versIds]) {
+            System.assertEquals(encodedRecordId, vers.Guest_Record_fileupload__c);
 
             // I'm stumped on this one, I'd expect this to return this way, but it doesn't.
             // Perhaps there's a bug in Salesforce tests that make it so you can't update ContentVersions?
@@ -161,8 +179,8 @@ public class FileUploadImproved_Test {
         }
     }
 
-    @isTest
-    public static void append_to_contentversion_version_has_data(){
+    @IsTest
+    public static void appendToContentVersionVersionHasData() {
         ContentVersion cv = getCV();
 
         String currentVersionData = EncodingUtil.base64Encode(cv.VersionData);
@@ -171,19 +189,19 @@ public class FileUploadImproved_Test {
         Blob beforeBlob = Blob.valueOf(beforeString);
         String newVersionData = EncodingUtil.base64Encode(beforeblob);
 
-        system.test.startTest();
-            FileUploadImprovedHelper.appendDataToContentVersion(cv.Id, newVersionData);
-        system.test.stopTest();
+        Test.startTest();
+        FileUploadImprovedHelper.appendDataToContentVersion(cv.Id, newVersionData);
+        Test.stopTest();
 
         // Stumped here too.
         // system.assertEquals(currentVersionData + newVersionData, EncodingUtil.base64Encode(getCV().VersionData));
     }
 
-    private static ContentVersion getCV(){
+    private static ContentVersion getCV() {
         return [SELECT Id, Guest_Record_fileupload__c, ContentDocument.Title, ContentDocumentId, VersionData FROM ContentVersion LIMIT 1];
     }
 
-    private static Contact getCon(){
+    private static Contact getCon() {
         return [SELECT Id FROM Contact];
     }
 }
